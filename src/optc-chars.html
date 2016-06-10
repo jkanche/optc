@@ -1,0 +1,255 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../bower_components/iron-image/iron-image.html">
+<link rel="import" href="../bower_components/iron-label/iron-label.html">
+<link rel="import" href="../bower_components/flexible-rating/flexible-rating.html">
+
+<dom-module id="optc-chars">
+
+  <template>
+
+    <style>
+      :host {
+        display: block;
+        padding: 10px;
+      }
+      .card {
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+        padding: 16px;
+        margin: 24px;
+        border-radius: 5px;
+        background-color: #fff;
+        color: #757575;
+      }
+      .circle {
+        display: inline-block;
+        height: 64px;
+        width: 64px;
+        border-radius: 50%;
+        background: #ddd;
+        line-height: 64px;
+        font-size: 30px;
+        color: #555;
+        text-align: center;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 16px 0;
+        color: #212121;
+      }
+      
+      iron-list {
+        --iron-list-items-container: {
+          max-width: 800px;
+          margin: auto;
+          margin-top: 20px;
+          margin-bottom: 60px;
+          border-bottom: 1px solid #ddd;
+        };
+      }
+      
+      .item {
+        @apply(--layout-horizontal);
+        padding: 20px;
+        border-radius: 8px;
+        background-color: white;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+        cursor: pointer;
+      }
+      
+     .pad {
+        padding: 0 16px;
+        @apply(--layout-flex);
+        @apply(--layout-vertical);
+     }
+     
+     .primary {
+      font-size: 16px;
+      font-weight: bold;
+    }
+    
+    .charClass {
+      color: red;
+    }
+    
+     .shortText, .longText {
+        font-size: 14px;
+      }
+      
+      .longText {
+        display: none;
+      }
+      
+      .apdTxt {
+        margin-left: 25px;  
+      }
+    
+    .item:hover .shortText::after {
+        content: ' [+]';
+        color: gray;
+      }
+      .item.expanded:hover .shortText::after {
+        content: '';
+      }
+      .item.expanded .longText {
+        display: block;
+      }
+      .item.expanded:hover .longText::after {
+        content: ' [–]';
+      }
+      .spacer {
+        @apply(--layout-flex);
+      }
+      .evolverGrid {
+        display: inline-block;
+      }
+    
+    </style>
+
+    <iron-list id="charsList" items="[[units]]" as="item" selection-enabled multi-selection scroll-target="document">
+      <template>
+        <div>
+          <div class$="[[getClassForItem(item, selected)]]" tabindex$="[[tabIndex]]">
+            <iron-image src="[[_getImageUrl(index, 1)]]"></iron-image>
+            <div class="pad">
+              <div class="primary">[[item.0]] </div>
+              <div class="shortText">
+                <div class="secondary">[[item.2]] <flexible-rating value="[[item.3]]" max="6" read-only="true"></flexible-rating></div> 
+                <div class="secondary">Health: [[item.12]]  Attack: [[item.13]]</div>
+                <div class="secondary">Recovery: [[item.14]]  Cost: [[item.4]]</div>
+                <div class="secondary">Combo: [[item.5]]  MaxLevel: [[item.7]]</div>
+                <div class="secondary">Cooldown: [[_getCooldown(index)]]</div>
+              </div>
+              <div class="longText">
+                <span class="primary">Captain Ability</span>
+                <div class="secondary apdTxt">[[_getCaptainSkill(index)]]</div>
+                <span class="primary charClass">Special - [[_getSpecialName(index)]] </span>
+                <div class="secondary apdTxt">[[_getSpecialSkill(index)]]</div>
+                <div class="primary">Evolutions</div>
+                <div class="primary evolverGrid">
+                  <template is="dom-repeat" items="[[_getEvolutionParents(index)]]" as="epItem" index-as="epIndex">
+                    <div class="primary">
+                    <iron-image style="width:90px; height:90px;" sizing="contain" src="[[_getImageUrl(epItem, 0)]]"></iron-image>
+                    <template is="dom-repeat" items="[[_getEvolutionChild(index, epIndex)]]" as="ecItem" index-as="ecIndex">
+                      <iron-image style="width:75px; height:75px;" sizing="contain" src="[[_getImageUrl(ecItem, 0)]]"></iron-image>
+                    </template>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+  </iron-list>
+
+  </template>
+
+  <script>
+    Polymer({
+      is: 'optc-chars',
+      ready: function() {
+        this.units = window.units;
+        this.cooldowns = window.cooldowns;
+        this.details = window.details;
+        this.evolutions = window.evolutions;
+      },
+      _getImageUrl: function(id, mod) {
+        var imgId = "0000" + (id + mod);
+        imgId = imgId.substring(imgId.length - 4)
+        return 'http://onepiece-treasurecruise.com/wp-content/uploads/f' + (imgId) + '.png';
+      },
+      _getCaptainSkill: function(id) {
+        if(this.details[id+1] != undefined) {
+          return this.details[id+1].captain || "-";
+        }
+        return "-";
+      },
+      _getSpecialSkill: function(id) {
+        if(this.details[id+1] != undefined) {
+          return this.details[id+1].special || "-";
+        }
+        return "-";
+      },
+      _getSpecialName: function(id) {
+        if(this.details[id+1] != undefined) {
+          return this.details[id+1].specialName || "-";
+        }
+        return "-";
+      },
+      _getCooldown: function(id) {
+        var cd = this.cooldowns[id];
+        if(cd == null) {
+          return "None";
+        }
+        else {
+          return cd[0] + "->" + cd[1];
+        }
+        
+        return "None";
+        
+      },
+      _getEvolutionParents: function(id) {
+        var evols = this.evolutions[id+1];
+          if(evols != undefined) {
+                    if(Array.isArray(evols.evolution)) {
+            return evols.evolution;
+          }
+          else {
+            return [evols.evolution];
+          }
+        }
+      },
+      _getEvolutionChild: function(id, idx) {
+        var evols = this.evolutions[id+1];
+        if(evols != undefined) {
+                  if(Array.isArray(evols.evolution)) {
+          return evols.evolvers[idx];
+        }
+        else {
+          return evols.evolvers;
+        }
+        }
+
+      },
+      _getEvolutionChars: function(id) {
+        var evols = this.evolutions[id+1];
+        var res = [];
+        if(Array.isArray(evols.evolution)) {
+          for (var i=0; i< evols.evolution.length; i ++) {
+            var temp = [];
+            temp.push(evols.evolution[i]);
+            temp.concat(evols.evolvers[i]);
+            
+            res.push(temp);
+          }
+        }
+        else {
+            var temp = [];
+            temp.push(evols.evolution);
+            temp.concat(evols.evolvers);
+            
+            res.push(temp);
+        }
+        
+        return res;
+        
+      },
+      getClassForItem: function(item, selected) {
+        return selected ? 'item expanded' : 'item';
+      }
+    });
+  </script>
+
+</dom-module>
